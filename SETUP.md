@@ -5,6 +5,7 @@ To enable a github workflow to publish collectors to your GCP project you will e
  # 1. Variables (Update these for your project)
  export PROJECT_ID="your-project-id"
  export REPO="your-org/defenda-collectas" # e.g. "jeffbryner/defenda-collectas"
+ export LOCATION="us-central1" # or your preferred location
 
  # 2. Create the Workload Identity Pool
  gcloud iam workload-identity-pools create "github-pool" \
@@ -19,20 +20,26 @@ To enable a github workflow to publish collectors to your GCP project you will e
   --workload-identity-pool="github-pool" \
   --display-name="GitHub Actions Provider" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
-   --issuer-uri="https://token.actions.githubusercontent.com" \
-   --attribute-condition="assertion.repository == '${REPO}'"
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-condition="assertion.repository == '${REPO}'"
 
  # 4. Create the Service Account for Deployment
  gcloud iam service-accounts create "github-deployer" --project="${PROJECT_ID}"
+
+ # Create the artifact registry repository
+gcloud artifacts repositories create "collectors" \
+  --repository-format=docker \
+  --location="${LOCATION}" \
+  --project="${PROJECT_ID}"
 
  # 5. Grant permissions to the Service Account
 
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
    --role="roles/editor" \
    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
-# 2. Grant the Artifact Registry Writer role explicitly
+# 2. Grant the Artifact Registry role explicitly
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-    --role="roles/artifactregistry.writer" \
+    --role="roles/artifactregistry.admin" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
 
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \

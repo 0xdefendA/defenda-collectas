@@ -18,6 +18,7 @@ permissions:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: us-central1
+  REPO_NAME: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/collectors
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  
 
 jobs:
@@ -37,13 +38,13 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
       - name: Build and push Google Workspace Docker image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/google-workspace-collector:latest -f collectors/google_workspace/Dockerfile .
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/google-workspace-collector:latest
+          docker build -t ${{ env.REPO_NAME }}/google-workspace-collector:latest -f collectors/google_workspace/Dockerfile .
+          docker push ${{ env.REPO_NAME }}/google-workspace-collector:latest
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -64,7 +65,7 @@ jobs:
             {
               "google_workspace" = {
                 "enabled" = true,
-                "image"   = "gcr.io/${{ secrets.GCP_PROJECT_ID }}/google-workspace-collector:latest",
+                "image"   = "${{ env.REPO_NAME }}/google-workspace-collector:latest",
                 "schedule" = "0 * * * *",
                 "env_vars" = {
                   "APPLICATION_NAMES" = "login,admin,token,drive"
