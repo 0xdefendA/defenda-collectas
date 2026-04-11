@@ -1,0 +1,12 @@
+black
+isort
+flake8
+pytest
+google-cloud-pubsub
+google-cloud-secret-manager
+fastapi
+uvicorn
+google-auth
+google-auth-oauthlib
+google-api-python-client
+python-dotenv

@@ -1,0 +1,17 @@
+project_id        = "your-gcp-project-id"
+region            = "us-central1"
+pubsub_topic_name = "existing-ingest-topic"
+
+collectors = {
+  google_workspace = {
+    enabled = true
+    image   = "gcr.io/your-gcp-project-id/google-workspace-collector:latest"
+    schedule = "0 * * * *" # Hourly
+    env_vars = {
+      "APPLICATION_NAMES" = "login,admin,token,drive"
+    }
+    secret_env_vars = {
+      "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT" = "admin@example.com"
+    }
+  }
+}

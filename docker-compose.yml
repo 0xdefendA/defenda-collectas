@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  google-workspace-collector:
+    build:
+      context: .
+      dockerfile: collectors/google_workspace/Dockerfile
+    environment:
+      - GCP_PROJECT_ID=local-project
+      - PUBSUB_TOPIC=google-workspace-events
+      - STATE_SECRET_ID=google-workspace-collector-state
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - GOOGLE_WORKSPACE_DELEGATED_ACCOUNT=admin@example.com
+      - PORT=8080
+      # You should mount your credentials file locally
+      # - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    ports:
+      - "8080:8080"
+    depends_on:
+      - pubsub-emulator
+
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --project=local-project
+    ports:
+      - "8085:8085"

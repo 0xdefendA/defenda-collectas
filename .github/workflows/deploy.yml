@@ -1,0 +1,68 @@
+name: Deploy Collectors
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'collectors/**'
+      - 'shared/**'
+      - '.github/workflows/deploy.yml'
+      - 'terraform/**'
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build and push Google Workspace Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/google-workspace-collector:latest -f collectors/google_workspace/Dockerfile .
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/google-workspace-collector:latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_pubsub_topic_name: "google-workspace-events"
+          TF_VAR_collectors: >
+            {
+              "google_workspace" = {
+                "enabled" = true,
+                "image"   = "gcr.io/${{ secrets.GCP_PROJECT_ID }}/google-workspace-collector:latest",
+                "schedule" = "0 * * * *",
+                "env_vars" = {
+                  "APPLICATION_NAMES" = "login,admin,token,drive"
+                },
+                "secret_env_vars" = {
+                  "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT" = "${{ secrets.GOOGLE_WORKSPACE_DELEGATED_ACCOUNT }}"
+                }
+              }
+            }
