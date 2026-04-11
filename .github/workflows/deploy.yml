@@ -10,6 +10,11 @@ on:
       - '.github/workflows/deploy.yml'
       - 'terraform/**'
 
+# Required for Workload Identity Federation
+permissions:
+  contents: read
+  id-token: write
+
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: us-central1
@@ -21,10 +26,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Authenticate using Workload Identity Federation
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
