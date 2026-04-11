@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from pydantic import BaseModel
+import google.auth
 
 # Add shared directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
@@ -14,7 +15,7 @@ from shared.pubsub_publisher import PubSubPublisher
 from shared.state_manager import StateManager
 
 # Configuration
-PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
+credentials, PROJECT_ID = google.auth.default()
 PUBSUB_TOPIC = os.environ.get("PUBSUB_TOPIC", "defenda-event-ingest")
 STATE_SECRET_ID = os.environ.get("STATE_SECRET_ID", "google-workspace-collector-state")
 GOOGLE_WORKSPACE_DELEGATED_ACCOUNT = os.environ.get(
