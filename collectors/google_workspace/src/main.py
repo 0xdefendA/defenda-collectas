@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from google.oauth2 import service_account
