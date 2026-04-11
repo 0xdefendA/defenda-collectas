@@ -25,11 +25,19 @@ To enable a github workflow to publish collectors to your GCP project you will e
  # 4. Create the Service Account for Deployment
  gcloud iam service-accounts create "github-deployer" --project="${PROJECT_ID}"
 
- # 5. Grant permissions to the Service Account (minimal example)
- # You'll also need roles/run.admin, roles/artifactregistry.writer, etc.
+ # 5. Grant permissions to the Service Account
+
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
    --role="roles/editor" \
    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+# 2. Grant the Artifact Registry Writer role explicitly
+ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --role="roles/artifactregistry.writer" \
+    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
+
+ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --role="roles/run.admin" \
+    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
 
  # 6. Allow GitHub to impersonate the Service Account
  PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
