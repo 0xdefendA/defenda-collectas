@@ -17,11 +17,15 @@ from shared.state_manager import StateManager
 
 # Configuration
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
-PUBSUB_TOPIC = os.environ.get("PUBSUB_TOPIC", "google-workspace-events")
+PUBSUB_TOPIC = os.environ.get("PUBSUB_TOPIC", "defenda-event-ingest")
 STATE_SECRET_ID = os.environ.get("STATE_SECRET_ID", "google-workspace-collector-state")
-GOOGLE_WORKSPACE_DELEGATED_ACCOUNT = os.environ.get("GOOGLE_WORKSPACE_DELEGATED_ACCOUNT")
+GOOGLE_WORKSPACE_DELEGATED_ACCOUNT = os.environ.get(
+    "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT"
+)
 SCOPES = ["https://www.googleapis.com/auth/admin.reports.audit.readonly"]
-APPLICATION_NAMES = os.environ.get("APPLICATION_NAMES", "login,admin,token,drive").split(",")
+APPLICATION_NAMES = os.environ.get(
+    "APPLICATION_NAMES", "login,admin,token,drive"
+).split(",")
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -33,10 +37,12 @@ app = FastAPI()
 publisher = PubSubPublisher(PROJECT_ID, PUBSUB_TOPIC) if PROJECT_ID else None
 state_manager = StateManager(PROJECT_ID, STATE_SECRET_ID) if PROJECT_ID else None
 
+
 class TriggerResponse(BaseModel):
     status: str
     message: str
     records_processed: int
+
 
 def get_google_credentials():
     """Retrieves Google service account credentials and delegates to a user."""
@@ -55,6 +61,7 @@ def get_google_credentials():
         creds = creds.with_subject(GOOGLE_WORKSPACE_DELEGATED_ACCOUNT)
     return creds
 
+
 @app.post("/", response_model=TriggerResponse)
 async def trigger_collection():
     """Trigger point for Cloud Scheduler."""
@@ -62,10 +69,12 @@ async def trigger_collection():
         raise HTTPException(status_code=500, detail="GCP_PROJECT_ID not configured")
 
     logger.info("Starting Google Workspace log collection...")
-    
+
     creds = get_google_credentials()
     if not creds:
-        raise HTTPException(status_code=500, detail="Failed to obtain Google credentials")
+        raise HTTPException(
+            status_code=500, detail="Failed to obtain Google credentials"
+        )
 
     service = build("admin", "reports_v1", credentials=creds, cache_discovery=False)
 
@@ -75,7 +84,7 @@ async def trigger_collection():
         # Default to 1 hour ago if no state exists
         last_query_time = datetime.now(timezone.utc) - timedelta(hours=1)
         last_query_time_str = last_query_time.isoformat()
-    
+
     logger.info(f"Fetching logs since: {last_query_time_str}")
 
     total_records = 0
@@ -86,13 +95,17 @@ async def trigger_collection():
         page_token = None
         while True:
             try:
-                results = service.activities().list(
-                    userKey="all",
-                    applicationName=app_name.strip(),
-                    startTime=last_query_time_str,
-                    pageToken=page_token,
-                    maxResults=1000
-                ).execute()
+                results = (
+                    service.activities()
+                    .list(
+                        userKey="all",
+                        applicationName=app_name.strip(),
+                        startTime=last_query_time_str,
+                        pageToken=page_token,
+                        maxResults=1000,
+                    )
+                    .execute()
+                )
             except Exception as e:
                 logger.error(f"Error fetching logs for {app_name}: {e}")
                 break
@@ -104,7 +117,7 @@ async def trigger_collection():
                 for record in records:
                     record["_collector_source"] = "google_workspace"
                     record["_collector_app"] = app_name
-                
+
                 published_count = publisher.publish_messages(records)
                 total_records += published_count
                 logger.info(f"Published {published_count} records to Pub/Sub")
@@ -122,9 +135,11 @@ async def trigger_collection():
     return TriggerResponse(
         status="success",
         message=f"Completed collection for {len(APPLICATION_NAMES)} apps",
-        records_processed=total_records
+        records_processed=total_records,
     )
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
