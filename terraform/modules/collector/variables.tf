@@ -26,6 +26,7 @@ variable "schedule" {
 variable "pubsub_topic_name" {
   description = "The name of the existing Pub/Sub topic"
   type        = string
+  default     = "defenda-event-ingest"
 }
 
 variable "env_vars" {
