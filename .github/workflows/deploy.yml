@@ -66,7 +66,7 @@ jobs:
         run: terraform apply -auto-approve
         env:
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
-          TF_VAR_pubsub_topic_name: "google-workspace-events"
+          TF_VAR_pubsub_topic_name: "defenda-event-ingest"
           TF_VAR_collectors: >
             {
               "google-workspace" = {
