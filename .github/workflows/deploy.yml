@@ -65,8 +65,8 @@ jobs:
             exit 1
           fi
 
-      - name: Configure Docker auth
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev 
+      # - name: Configure Docker auth
+      #   run: gcloud auth configure-docker us-central1-docker.pkg.dev 
       # 2. Log in to Docker DIRECTLY
       # - name: 'Docker Login'
       #   run: |
