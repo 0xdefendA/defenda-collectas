@@ -37,13 +37,17 @@ gcloud artifacts repositories create "collectors" \
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
    --role="roles/editor" \
    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
-# 2. Grant the Artifact Registry role explicitly
+ # Grant other services explicitly
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --role="roles/artifactregistry.admin" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
 
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --role="roles/run.admin" \
+    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
+
+ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --role="roles/pubsub.admin" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
 
  # 6. Allow GitHub to impersonate the Service Account
