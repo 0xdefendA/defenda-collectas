@@ -40,9 +40,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-
       # Authenticate using Workload Identity Federation
       # and GET an access token
       - id: 'auth'
@@ -52,6 +49,9 @@ jobs:
           token_format: 'access_token'
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: 'Debug Auth'
         run: |
