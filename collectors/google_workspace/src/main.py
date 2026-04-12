@@ -43,22 +43,36 @@ class TriggerResponse(BaseModel):
     records_processed: int
 
 
-def get_google_credentials():
-    """Retrieves Google service account credentials and delegates to a user."""
-    # This assumes GOOGLE_APPLICATION_CREDENTIALS points to a JSON file
-    # or the service account is already authenticated.
-    # For delegation, we need the service account key.
-    creds_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-    if not creds_path:
-        logger.error("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
-        return None
+def delegated_credential(credentials, subject, scopes):
+    from google.auth import iam
+    from google.auth.transport import requests
+    from google.oauth2 import service_account
 
-    creds = service_account.Credentials.from_service_account_file(
-        creds_path, scopes=SCOPES
-    )
-    if GOOGLE_WORKSPACE_DELEGATED_ACCOUNT:
-        creds = creds.with_subject(GOOGLE_WORKSPACE_DELEGATED_ACCOUNT)
-    return creds
+    TOKEN_URI = "https://accounts.google.com/o/oauth2/token"
+    try:
+        admin_creds = credentials.with_subject(subject).with_scopes(scopes)
+    except AttributeError:  # Looks like a compute creds object
+        # Refresh the boostrap credentials. This ensures that the information
+        # about this account, notably the email, is populated.
+        request = requests.Request()
+        credentials.refresh(request)
+
+        # Create an IAM signer using the bootstrap credentials.
+        signer = iam.Signer(request, credentials, credentials.service_account_email)
+
+        # Create OAuth 2.0 Service Account credentials using the IAM-based
+        # signer and the bootstrap_credential's service account email.
+        admin_creds = service_account.Credentials(
+            signer,
+            credentials.service_account_email,
+            TOKEN_URI,
+            scopes=scopes,
+            subject=subject,
+        )
+    except Exception:
+        raise
+
+    return admin_creds
 
 
 @app.post("/", response_model=TriggerResponse)
@@ -69,13 +83,17 @@ async def trigger_collection():
 
     logger.info("Starting Google Workspace log collection...")
 
-    creds = get_google_credentials()
-    if not creds:
+    service_creds = delegated_credential(
+        credentials, GOOGLE_WORKSPACE_DELEGATED_ACCOUNT, SCOPES
+    )
+    if not service_creds:
         raise HTTPException(
-            status_code=500, detail="Failed to obtain Google credentials"
+            status_code=500, detail="Failed to obtain Delegated credentials"
         )
 
-    service = build("admin", "reports_v1", credentials=creds, cache_discovery=False)
+    service = build(
+        "admin", "reports_v1", credentials=service_creds, cache_discovery=False
+    )
 
     # Get state (last query time)
     last_query_time_str = state_manager.get_state()
