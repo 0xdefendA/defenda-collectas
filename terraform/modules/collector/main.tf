@@ -6,7 +6,11 @@ resource "google_service_account" "collector_sa" {
 resource "google_secret_manager_secret" "state_secret" {
   secret_id = "${var.name}-collector-state"
   replication {
-    auto {}
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
   }
 }
 
@@ -20,11 +24,11 @@ resource "google_cloud_run_v2_service" "service" {
     containers {
       # AUTOMATIC IMAGE INFERENCE: Constructed from project, region, and collector name
       image = "${var.region}-docker.pkg.dev/${var.project_id}/collectors/${var.name}-collector:latest"
-      
+
       ports {
         container_port = 8080
       }
-      
+
       env {
         name  = "GCP_PROJECT_ID"
         value = var.project_id
