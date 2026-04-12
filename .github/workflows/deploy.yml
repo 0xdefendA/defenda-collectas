@@ -35,7 +35,7 @@ jobs:
             echo "CRITICAL ERROR: GCP_WIF_PROVIDER secret is NOT found."
             exit 1
           fi
-          echo "All required secrets are present."
+          echo "All required secrets are present. ✅"
 
       - name: Checkout code
         uses: actions/checkout@v3
