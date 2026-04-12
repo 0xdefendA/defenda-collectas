@@ -38,8 +38,12 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Configure Docker auth
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+      # - name: Configure Docker auth
+      #   run: gcloud auth configure-docker us-central1-docker.pkg.dev 
+      # 2. Log in to Docker DIRECTLY
+      - name: 'Docker Login'
+        run: |
+          echo "${{ steps.auth.outputs.access_token }}" | docker login -u oauth2access_token --password-stdin https://us-central1-docker.pkg.dev      
 
       - name: Build and push Google Workspace Docker image
         run: |
