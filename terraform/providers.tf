@@ -8,11 +8,9 @@ terraform {
     }
   }
 
-  # Replace with your GCS bucket for remote state
-  # backend "gcs" {
-  #   bucket = "YOUR_TERRAFORM_STATE_BUCKET"
-  #   prefix = "defenda-collectas/state"
-  # }
+  backend "gcs" {
+    prefix = "terraform/state"
+  }
 }
 
 provider "google" {
