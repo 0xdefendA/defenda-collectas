@@ -3,7 +3,7 @@ region            = "us-central1"
 pubsub_topic_name = "existing-ingest-topic"
 
 collectors = {
-  google_workspace = {
+  "google-workspace" = {
     enabled  = true
     schedule = "0 * * * *" # Hourly
     env_vars = {
