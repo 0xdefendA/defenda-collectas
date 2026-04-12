@@ -19,6 +19,8 @@ env:
   REGION: us-central1
   REGISTRY_HOST: us-central1-docker.pkg.dev
   REPO_NAME: collectors
+  # Added for Terraform Init
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
 
 jobs:
   deploy:
@@ -36,7 +38,7 @@ jobs:
           service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
 
       - name: 'Login to Artifact Registry'
-        uses: 'docker/login-action@v4'
+        uses: 'docker/login-action@v3'
         with:
           registry: ${{ env.REGISTRY_HOST }}
           username: 'oauth2accesstoken'
@@ -55,15 +57,16 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform
-        run: terraform init
+        run: |
+          # Pass the bucket name dynamically so it's not hardcoded in the public repo
+          terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve
         env:
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
-          TF_VAR_pubsub_topic_name: "defenda-event-ingest"
-          # NON-SENSITIVE METADATA ONLY
+          TF_VAR_pubsub_topic_name: "google-workspace-events"
           TF_VAR_collectors: >
             {
               "google-workspace" = {
