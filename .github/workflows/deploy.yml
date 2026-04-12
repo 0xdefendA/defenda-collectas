@@ -10,7 +10,6 @@ on:
       - '.github/workflows/deploy.yml'
       - 'terraform/**'
 
-# Required for Workload Identity Federation
 permissions:
   contents: read
   id-token: write
@@ -18,72 +17,36 @@ permissions:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: us-central1
-  REPO_NAME: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/collectors
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  
+  REGISTRY_HOST: us-central1-docker.pkg.dev
+  REPO_NAME: collectors
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Check Secrets'
-        run: |
-          if [ -z "${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}" ]; then
-            echo "CRITICAL ERROR: GCP_WIF_SERVICE_ACCOUNT secret is NOT found."
-            exit 1
-          fi
-          if [ -z "${{ secrets.GCP_WIF_PROVIDER }}" ]; then
-            echo "CRITICAL ERROR: GCP_WIF_PROVIDER secret is NOT found."
-            exit 1
-          fi
-          echo "All required secrets are present. ✅"
-
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Authenticate using Workload Identity Federation
-      # and GET an access token
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
         with:
-          token_format: access_token
+          token_format: 'access_token'
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-
-      - name: 'Debug Auth'
-        run: |
-          # This will print the email of the authenticated identity
-          gcloud auth list
-          # This checks if the access token actually exists
-          if [ -n "${{ steps.auth.outputs.access_token }}" ]; then
-            echo "Access token generated successfully."
-          else
-            echo "ERROR: Access token is EMPTY."
-            exit 1
-          fi
-
-      # - name: Configure Docker auth
-      #   run: gcloud auth configure-docker us-central1-docker.pkg.dev 
-      # 2. Log in to Docker DIRECTLY
-      # - name: 'Docker Login'
-      #   run: |
-      #     echo "${{ steps.auth.outputs.access_token }}" | docker login -u oauth2access_token --password-stdin https://us-central1-docker.pkg.dev      
-      # 2. Log in to Docker using the specialized Login Action (Fixes TTY issues)
       - name: 'Login to Artifact Registry'
-        uses: 'docker/login-action@v4'
+        uses: 'docker/login-action@v3'
         with:
-          registry: us-central1-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
-
+          registry: ${{ env.REGISTRY_HOST }}
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
 
       - name: Build and push Google Workspace Docker image
         run: |
-          docker build -t ${{ env.REPO_NAME }}/google-workspace-collector:latest -f collectors/google_workspace/Dockerfile .
-          docker push ${{ env.REPO_NAME }}/google-workspace-collector:latest
+          IMAGE_PATH="${{ env.REGISTRY_HOST }}/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/google-workspace-collector"
+          docker build -t $IMAGE_PATH:latest -f collectors/google_workspace/Dockerfile .
+          docker push $IMAGE_PATH:latest
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -99,18 +62,18 @@ jobs:
         run: terraform apply -auto-approve
         env:
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
-          TF_VAR_pubsub_topic_name: "google-workspace-events"
+          TF_VAR_pubsub_topic_name: "defenda-event-ingest"
+          # NON-SENSITIVE METADATA ONLY
           TF_VAR_collectors: >
             {
               "google_workspace" = {
-                "enabled" = true,
-                "image"   = "${{ env.REPO_NAME }}/google-workspace-collector:latest",
+                "enabled"  = true,
                 "schedule" = "0 * * * *",
                 "env_vars" = {
                   "APPLICATION_NAMES" = "login,admin,token,drive"
                 },
-                "secret_env_vars" = {
-                  "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT" = "${{ secrets.GOOGLE_WORKSPACE_DELEGATED_ACCOUNT }}"
+                "secret_mounts" = {
+                  "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT" = "google-workspace-admin-email"
                 }
               }
             }

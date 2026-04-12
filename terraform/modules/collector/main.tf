@@ -13,13 +13,14 @@ resource "google_secret_manager_secret" "state_secret" {
 resource "google_cloud_run_v2_service" "service" {
   name     = "${var.name}-collector"
   location = var.region
-  # Using INGRESS_TRAFFIC_INTERNAL_ONLY for security if only triggered by Scheduler
   ingress  = "INGRESS_TRAFFIC_INTERNAL_ONLY"
 
   template {
     service_account = google_service_account.collector_sa.email
     containers {
-      image = var.image
+      # AUTOMATIC IMAGE INFERENCE: Constructed from project, region, and collector name
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/collectors/${var.name}-collector:latest"
+      
       ports {
         container_port = 8080
       }
@@ -37,6 +38,7 @@ resource "google_cloud_run_v2_service" "service" {
         value = google_secret_manager_secret.state_secret.secret_id
       }
 
+      # Standard non-sensitive env vars
       dynamic "env" {
         for_each = var.env_vars
         content {
@@ -45,11 +47,17 @@ resource "google_cloud_run_v2_service" "service" {
         }
       }
 
+      # SECURE SECRET MOUNTS: The value is never in Terraform or GitHub
       dynamic "env" {
-        for_each = var.secret_env_vars
+        for_each = var.secret_mounts
         content {
-          name  = env.key
-          value = env.value
+          name = env.key
+          value_source {
+            secret_key_ref {
+              secret  = env.value
+              version = "latest"
+            }
+          }
         }
       }
     }
@@ -74,6 +82,14 @@ resource "google_secret_manager_secret_iam_member" "state_accessor" {
 resource "google_secret_manager_secret_iam_member" "state_version_manager" {
   secret_id = google_secret_manager_secret.state_secret.id
   role      = "roles/secretmanager.secretVersionManager"
+  member    = "serviceAccount:${google_service_account.collector_sa.email}"
+}
+
+# IAM: Grant access to any secrets being mounted
+resource "google_secret_manager_secret_iam_member" "secret_mount_accessor" {
+  for_each  = var.secret_mounts
+  secret_id = each.value
+  role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 

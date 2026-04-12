@@ -9,9 +9,8 @@ module "collectors" {
   project_id        = var.project_id
   region            = var.region
   name              = each.key
-  image             = each.value.image
   schedule          = each.value.schedule
   pubsub_topic_name = data.google_pubsub_topic.existing_ingest.name
   env_vars          = each.value.env_vars
-  secret_env_vars   = each.value.secret_env_vars
+  secret_mounts     = each.value.secret_mounts
 }

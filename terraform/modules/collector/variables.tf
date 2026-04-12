@@ -13,11 +13,6 @@ variable "name" {
   type        = string
 }
 
-variable "image" {
-  description = "The container image to deploy"
-  type        = string
-}
-
 variable "schedule" {
   description = "The cron schedule for triggering the collector"
   type        = string
@@ -26,17 +21,16 @@ variable "schedule" {
 variable "pubsub_topic_name" {
   description = "The name of the existing Pub/Sub topic"
   type        = string
-  default     = "defenda-event-ingest"
 }
 
 variable "env_vars" {
-  description = "Additional environment variables for the collector"
+  description = "Non-sensitive environment variables"
   type        = map(string)
   default     = {}
 }
 
-variable "secret_env_vars" {
-  description = "Sensitive environment variables for the collector"
+variable "secret_mounts" {
+  description = "A map of ENV_VAR_NAME to Secret Manager Secret ID for sensitive data"
   type        = map(string)
   default     = {}
 }
