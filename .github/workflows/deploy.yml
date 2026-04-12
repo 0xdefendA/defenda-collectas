@@ -61,6 +61,7 @@ jobs:
           # Pass the bucket name dynamically so it's not hardcoded in the public repo
           terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
+      # ensure this uses the defenda platform ingest topic name: TF_VAR_pubsub_topic_name: "defenda-event-ingest"
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve
