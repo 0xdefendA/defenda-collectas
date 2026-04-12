@@ -25,6 +25,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: 'Check Secrets'
+        run: |
+          if [ -z "${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}" ]; then
+            echo "CRITICAL ERROR: GCP_WIF_SERVICE_ACCOUNT secret is NOT found."
+            exit 1
+          fi
+          if [ -z "${{ secrets.GCP_WIF_PROVIDER }}" ]; then
+            echo "CRITICAL ERROR: GCP_WIF_PROVIDER secret is NOT found."
+            exit 1
+          fi
+          echo "All required secrets are present."
+
       - name: Checkout code
         uses: actions/checkout@v3
 
