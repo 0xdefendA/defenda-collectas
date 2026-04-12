@@ -50,6 +50,12 @@ gcloud artifacts repositories create "collectors" \
     --role="roles/pubsub.admin" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
 
+ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --role="roles/storage.objectAdmin" \
+    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
+
+
+
  # 6. Allow GitHub to impersonate the Service Account
  PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
  
@@ -72,6 +78,7 @@ gcloud artifacts repositories create "collectors" \
    1. GCP_PROJECT_ID: Your Project ID.
    2. GCP_WIF_PROVIDER: The output of command #7 (e.g., projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider).
    3. GCP_WIF_SERVICE_ACCOUNT: github-deployer@your-project-id.iam.gserviceaccount.com.
+   4. TF_STATE_BUCKET: the bucket name created from your defenda platform deployment
 
   This setup is far more secure because it never uses a static JSON key. GitHub authenticates directly to GCP using an OIDC token that is only valid for that specific workflow run in your specific repository.
 
