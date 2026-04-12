@@ -90,7 +90,7 @@ resource "google_pubsub_topic_iam_member" "publisher" {
   member  = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
-# IAM: Permission to create service account tokens
+# IAM: Permission to create service account tokens for delegated auth
 resource "google_project_iam_member" "collector_token_creator" {
   project = var.project_id
   role    = "roles/iam.serviceAccountTokenCreator"

@@ -58,6 +58,9 @@ gcloud artifacts repositories create "collectors" \
     --role="roles/secretmanager.admin" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 
+ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --role="roles/iam.serviceAccountAdmin" \
+    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 
  # 6. Allow GitHub to impersonate the Service Account
  PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
