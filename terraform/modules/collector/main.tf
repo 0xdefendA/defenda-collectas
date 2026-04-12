@@ -91,10 +91,10 @@ resource "google_pubsub_topic_iam_member" "publisher" {
 }
 
 # IAM: Permission to create service account tokens for delegated auth
-resource "google_project_iam_member" "collector_token_creator" {
-  project = var.project_id
-  role    = "roles/iam.serviceAccountTokenCreator"
-  member  = "serviceAccount:${google_service_account.collector_sa.email}"
+resource "google_service_account_iam_member" "collector_token_creator" {
+  service_account_id = google_service_account.collector_sa.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
 # IAM: Collector permissions to access/manage state in Secret Manager
