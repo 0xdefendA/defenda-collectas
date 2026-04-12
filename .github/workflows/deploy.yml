@@ -40,6 +40,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
       # Authenticate using Workload Identity Federation
       # and GET an access token
       - id: 'auth'
@@ -50,8 +53,17 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+      - name: 'Debug Auth'
+        run: |
+          # This will print the email of the authenticated identity
+          gcloud auth list
+          # This checks if the access token actually exists
+          if [ -n "${{ steps.auth.outputs.access_token }}" ]; then
+            echo "Access token generated successfully."
+          else
+            echo "ERROR: Access token is EMPTY."
+            exit 1
+          fi
 
       # - name: Configure Docker auth
       #   run: gcloud auth configure-docker us-central1-docker.pkg.dev 
