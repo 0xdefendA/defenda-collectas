@@ -14,6 +14,19 @@ resource "google_secret_manager_secret" "state_secret" {
   }
 }
 
+# Ensure the mounted secrets exist in Secret Manager
+resource "google_secret_manager_secret" "mounted_secrets" {
+  for_each  = var.secret_mounts
+  secret_id = each.value
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
 resource "google_cloud_run_v2_service" "service" {
   name     = "${var.name}-collector"
   location = var.region
@@ -58,7 +71,8 @@ resource "google_cloud_run_v2_service" "service" {
           name = env.key
           value_source {
             secret_key_ref {
-              secret  = env.value
+              # Use the resource reference for dependency
+              secret  = google_secret_manager_secret.mounted_secrets[env.key].secret_id
               version = "latest"
             }
           }
@@ -92,7 +106,7 @@ resource "google_secret_manager_secret_iam_member" "state_version_manager" {
 # IAM: Grant access to any secrets being mounted
 resource "google_secret_manager_secret_iam_member" "secret_mount_accessor" {
   for_each  = var.secret_mounts
-  secret_id = each.value
+  secret_id = google_secret_manager_secret.mounted_secrets[each.key].secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.collector_sa.email}"
 }
