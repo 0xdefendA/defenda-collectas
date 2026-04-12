@@ -1,5 +1,5 @@
 collectors = {
-  google_workspace = {
+  google-workspace = {
     enabled  = true
     schedule = "0 * * * *" # Hourly
     env_vars = {
