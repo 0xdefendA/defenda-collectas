@@ -90,6 +90,13 @@ resource "google_pubsub_topic_iam_member" "publisher" {
   member  = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
+# IAM: Permission to create service account tokens
+resource "google_service_account_iam_member" "token_creator" {
+  service_account_id = google_service_account.collector_sa.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.collector_sa.email}"
+}
+
 # IAM: Collector permissions to access/manage state in Secret Manager
 resource "google_secret_manager_secret_iam_member" "state_accessor" {
   secret_id = google_secret_manager_secret.state_secret.id
