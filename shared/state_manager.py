@@ -27,6 +27,9 @@ class StateManager:
         self.parameter_path = self.client.parameter_path(
             project_id, location_id, parameter_id
         )
+        logger.info(
+            f"Initialized StateManager with parameter path: {self.parameter_path}"
+        )
 
     def get_state(self) -> Optional[str]:
         """Retrieves the latest state from the Parameter Manager.
