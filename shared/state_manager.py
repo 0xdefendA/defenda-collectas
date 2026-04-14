@@ -56,6 +56,9 @@ class StateManager:
             full_version_name = self.client.parameter_version_path(
                 self.project_id, self.location_id, self.parameter_id, "current"
             )
+            logger.info(
+                f"Constructed full version name for retrieval: {full_version_name}"
+            )
             get_request = parametermanager_v1.GetParameterVersionRequest(
                 name=full_version_name
             )
@@ -82,6 +85,7 @@ class StateManager:
         Returns:
             True if successful, False otherwise.
         """
+        logger.info(f"Setting new state in Parameter Manager: {state_value}")
         try:
             version_id = (
                 "current"  # Use a fixed version ID to always update the same version
