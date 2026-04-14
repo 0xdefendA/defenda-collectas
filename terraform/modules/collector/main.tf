@@ -3,7 +3,7 @@ resource "google_service_account" "collector_sa" {
   display_name = "Service Account for ${var.name} collector"
 }
 
-resource "google_cloud_parametermanager_parameter" "state_parameter" {
+resource "google_parameter_manager_regional_parameter" "state_parameter" {
   parameter_id = "${var.name}-collector-state"
   location     = var.region
 }
