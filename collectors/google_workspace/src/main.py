@@ -17,7 +17,7 @@ from shared.state_manager import StateManager
 # Configuration
 credentials, PROJECT_ID = google.auth.default()
 PUBSUB_TOPIC = os.environ.get("PUBSUB_TOPIC", "defenda-event-ingest")
-STATE_SECRET_ID = os.environ.get("STATE_SECRET_ID", "google-workspace-collector-state")
+STATE_PARAMETER_ID = os.environ.get("STATE_PARAMETER_ID", "google-workspace-collector-state")
 GOOGLE_WORKSPACE_DELEGATED_ACCOUNT = os.environ.get(
     "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT"
 )
@@ -34,7 +34,7 @@ app = FastAPI()
 
 # Initialize Shared Utilities
 publisher = PubSubPublisher(PROJECT_ID, PUBSUB_TOPIC) if PROJECT_ID else None
-state_manager = StateManager(PROJECT_ID, STATE_SECRET_ID) if PROJECT_ID else None
+state_manager = StateManager(PROJECT_ID, STATE_PARAMETER_ID) if PROJECT_ID else None
 
 
 class TriggerResponse(BaseModel):
