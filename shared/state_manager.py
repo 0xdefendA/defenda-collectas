@@ -59,6 +59,9 @@ class StateManager:
             get_request = parametermanager_v1.GetParameterVersionRequest(
                 name=full_version_name
             )
+            logger.info(
+                f"Retrieving state from Parameter Manager version: {get_request}"
+            )
             response = self.client.get_parameter_version(request=get_request)
 
             if response.disabled:
@@ -104,6 +107,9 @@ class StateManager:
                         data=state_value.encode("UTF-8")
                     )
                 ),
+            )
+            logger.info(
+                f"Creating new parameter version with state: {state_value} and request: {request}"
             )
             self.client.create_parameter_version(request=request)
             return True
