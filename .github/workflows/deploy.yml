@@ -74,7 +74,7 @@ jobs:
                 "enabled"  = true,
                 "schedule" = "0 * * * *",
                 "env_vars" = {
-                  "APPLICATION_NAMES" = "login,admin,token,drive"
+                  "APPLICATION_NAMES" = "access_evaluation,admin,calendar,context_aware_access,chrome,drive,gcp,gemini_in_workspace_apps,gmail,groups,login,meet,mobile,saml,token,user_accounts"
                 },
                 "secret_mounts" = {
                   "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT" = "google-workspace-admin-email"
