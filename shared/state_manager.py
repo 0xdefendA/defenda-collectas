@@ -75,13 +75,21 @@ class StateManager:
             True if successful, False otherwise.
         """
         try:
-            import time
-
-            # # Generate a unique version ID based on current timestamp
-            # version_id = f"v{int(time.time())}"
             version_id = (
                 "current"  # Use a fixed version ID to always update the same version
             )
+
+            # Can't update an existing version, can only delete/create
+            try:
+                full_version_name = self.client.parameter_version_path(
+                    self.project_id, self.location_id, self.parameter_id, version_id
+                )
+                delete_request = parametermanager_v1.DeleteParameterVersionRequest(
+                    name=full_version_name,
+                )
+                self.client.delete_parameter_version(request=delete_request)
+            except Exception as e:
+                logger.info(f"No existing version to delete or error deleting: {e}")
 
             request = parametermanager_v1.CreateParameterVersionRequest(
                 parent=self.parameter_path,

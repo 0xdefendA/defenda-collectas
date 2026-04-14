@@ -17,7 +17,9 @@ from shared.state_manager import StateManager
 # Configuration
 credentials, PROJECT_ID = google.auth.default()
 PUBSUB_TOPIC = os.environ.get("PUBSUB_TOPIC", "defenda-event-ingest")
-STATE_PARAMETER_ID = os.environ.get("STATE_PARAMETER_ID", "google-workspace-collector-state")
+STATE_PARAMETER_ID = os.environ.get(
+    "STATE_PARAMETER_ID", "google-workspace-collector-state"
+)
 GOOGLE_WORKSPACE_DELEGATED_ACCOUNT = os.environ.get(
     "GOOGLE_WORKSPACE_DELEGATED_ACCOUNT"
 )
