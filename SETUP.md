@@ -55,6 +55,10 @@ gcloud artifacts repositories create "collectors" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"   
 
  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --role="roles/parametermanager.admin" \
+    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+
+ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --role="roles/secretmanager.admin" \
     --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 
@@ -78,8 +82,10 @@ gcloud artifacts repositories create "collectors" \
    --format="value(name)"
 
 # 8. Enable optional apis (depending on the collectors you need)
-# google workspace uses the admin api
+# google workspace uses the admin api, parameter manager, and secret manager
  gcloud services enable admin.googleapis.com --project="${PROJECT_ID}"   
+ gcloud services enable parametermanager.googleapis.com --project="${PROJECT_ID}"   
+ gcloud services enable secretmanager.googleapis.com --project="${PROJECT_ID}"   
 
 ```
 
