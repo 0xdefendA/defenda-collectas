@@ -21,6 +21,7 @@ env:
   REPO_NAME: collectors
   # Added for Terraform Init
   TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true
 
 jobs:
   deploy:
