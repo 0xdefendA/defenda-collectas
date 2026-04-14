@@ -46,7 +46,7 @@ resource "google_cloud_run_v2_service" "service" {
       }
       env {
         name  = "STATE_PARAMETER_ID"
-        value = google_cloud_parametermanager_parameter.state_parameter.parameter_id
+        value = google_parameter_manager_regional_parameter.state_parameter.id
       }
 
       # Standard non-sensitive env vars
