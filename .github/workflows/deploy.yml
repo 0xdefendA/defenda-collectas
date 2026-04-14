@@ -73,7 +73,7 @@ jobs:
             {
               "google-workspace" = {
                 "enabled"  = true,
-                "schedule" = "0 * * * *",
+                "schedule" = "*/5 * * * *",
                 "env_vars" = {
                   "APPLICATION_NAMES" = "access_evaluation,admin,calendar,context_aware_access,chrome,drive,gcp,gemini_in_workspace_apps,gmail,groups,login,meet,mobile,saml,token,user_accounts"
                 },
