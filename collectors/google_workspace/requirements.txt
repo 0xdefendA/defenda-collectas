@@ -6,3 +6,5 @@ google-api-python-client
 python-dotenv
 google-cloud-pubsub
 google-cloud-secret-manager
+google-cloud-parametermanager
+

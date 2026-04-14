@@ -3,6 +3,7 @@ isort
 flake8
 pytest
 google-cloud-pubsub
+google-cloud-parametermanager
 google-cloud-secret-manager
 fastapi
 uvicorn
