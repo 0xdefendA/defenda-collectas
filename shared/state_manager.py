@@ -30,22 +30,29 @@ class StateManager:
             The latest state value, or None if not found or on error.
         """
         try:
-            # List versions and find the one with the most recent create_time
-            request = parametermanager_v1.ListParameterVersionsRequest(
-                parent=self.parameter_path,
-                page_size=1,
-                order_by="create_time desc",
-            )
-            results = self.client.list_parameter_versions(request=request)
-            versions = list(results)
-            if not versions:
-                return None
+            # # List versions and find the one with the most recent create_time
+            # request = parametermanager_v1.ListParameterVersionsRequest(
+            #     parent=self.parameter_path,
+            #     page_size=1,
+            #     order_by="create_time desc",
+            # )
+            # results = self.client.list_parameter_versions(request=request)
+            # versions = list(results)
+            # if not versions:
+            #     return None
 
-            latest_version = versions[0]
+            # latest_version = versions[0]
 
             # Get the full version details including payload
+
+            # Build the FULL resource name of the parameter version.
+            # in the format projects/*/locations/*/parameters/*/versions/*.
+
+            full_version_name = self.client.parameter_version_path(
+                self.project_id, self.location_id, self.parameter_id, "current"
+            )
             get_request = parametermanager_v1.GetParameterVersionRequest(
-                name=latest_version.name
+                name=full_version_name
             )
             response = self.client.get_parameter_version(request=get_request)
 
@@ -70,8 +77,11 @@ class StateManager:
         try:
             import time
 
-            # Generate a unique version ID based on current timestamp
-            version_id = f"v{int(time.time())}"
+            # # Generate a unique version ID based on current timestamp
+            # version_id = f"v{int(time.time())}"
+            version_id = (
+                "current"  # Use a fixed version ID to always update the same version
+            )
 
             request = parametermanager_v1.CreateParameterVersionRequest(
                 parent=self.parameter_path,
