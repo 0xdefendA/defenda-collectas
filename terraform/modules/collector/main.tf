@@ -3,15 +3,9 @@ resource "google_service_account" "collector_sa" {
   display_name = "Service Account for ${var.name} collector"
 }
 
-resource "google_secret_manager_secret" "state_secret" {
-  secret_id = "${var.name}-collector-state"
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
+resource "google_cloud_parametermanager_parameter" "state_parameter" {
+  parameter_id = "${var.name}-collector-state"
+  location     = var.region
 }
 
 # Ensure the mounted secrets exist in Secret Manager
@@ -51,8 +45,8 @@ resource "google_cloud_run_v2_service" "service" {
         value = var.pubsub_topic_name
       }
       env {
-        name  = "STATE_SECRET_ID"
-        value = google_secret_manager_secret.state_secret.secret_id
+        name  = "STATE_PARAMETER_ID"
+        value = google_cloud_parametermanager_parameter.state_parameter.parameter_id
       }
 
       # Standard non-sensitive env vars
@@ -97,16 +91,10 @@ resource "google_service_account_iam_member" "collector_token_creator" {
   member             = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
-# IAM: Collector permissions to access/manage state in Secret Manager
-resource "google_secret_manager_secret_iam_member" "state_accessor" {
-  secret_id = google_secret_manager_secret.state_secret.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.collector_sa.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "state_version_manager" {
-  secret_id = google_secret_manager_secret.state_secret.id
-  role      = "roles/secretmanager.secretVersionManager"
+# IAM: Collector permissions to access/manage state in Parameter Manager
+resource "google_cloud_parametermanager_parameter_iam_member" "state_accessor" {
+  parameter = google_cloud_parametermanager_parameter.state_parameter.id
+  role      = "roles/parametermanager.admin"
   member    = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
