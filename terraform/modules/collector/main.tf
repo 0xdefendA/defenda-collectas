@@ -91,7 +91,6 @@ resource "google_service_account_iam_member" "collector_token_creator" {
   member             = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
-
 # IAM: Collector permissions to access/manage state in Parameter Manager
 resource "google_project_iam_member" "parameter_version_manager" {
   project = var.project_id
