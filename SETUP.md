@@ -77,6 +77,10 @@ gcloud artifacts repositories create "collectors" \
    --workload-identity-pool="github-pool" \
    --format="value(name)"
 
+# 8. Enable optional apis (depending on the collectors you need)
+# google workspace uses the admin api
+ gcloud services enable admin.googleapis.com --project="${PROJECT_ID}"   
+
 ```
 
   ### Final GitHub Configuration
