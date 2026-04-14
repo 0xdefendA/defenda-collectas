@@ -14,6 +14,11 @@ class StateManager:
         self.parameter_id = parameter_id
         self.location_id = location_id
 
+        # long form or short form?
+        if "projects/" in parameter_id and "parameters/" in parameter_id:
+            # Extract parameter_id from the full resource name
+            self.parameter_id = parameter_id.split("/parameters/")[-1]
+
         # Create the Parameter Manager client with the regional endpoint.
         api_endpoint = f"parametermanager.{location_id}.rep.googleapis.com"
         self.client = parametermanager_v1.ParameterManagerClient(
