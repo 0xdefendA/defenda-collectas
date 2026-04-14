@@ -9,7 +9,8 @@ This service collects activity logs from Google Workspace using the Google Admin
 - Docker and Docker Compose
 - Google Cloud Service Account with:
     - `roles/pubsub.publisher`
-    - `roles/secretmanager.admin` (or `roles/secretmanager.secretAccessor` and `roles/secretmanager.secretVersionManager`)
+    - `roles/parametermanager.admin` (or `roles/parametermanager.parameterEditor`)
+    - `roles/secretmanager.secretAccessor` (for mounted secrets)
     - Domain-wide delegation enabled for the Admin SDK.
 
 ### Setup
@@ -46,7 +47,7 @@ The following environment variables can be used to configure the service:
 | --- | --- | --- |
 | `GCP_PROJECT_ID` | GCP Project ID | |
 | `PUBSUB_TOPIC` | Pub/Sub topic to publish logs to | `google-workspace-events` |
-| `STATE_SECRET_ID` | Secret ID in Secret Manager to store the last run time | `google-workspace-collector-state` |
+| `STATE_PARAMETER_ID` | Parameter ID in Parameter Manager to store the last run time | `google-workspace-collector-state` |
 | `GOOGLE_WORKSPACE_DELEGATED_ACCOUNT` | Admin user email for domain-wide delegation | |
 | `APPLICATION_NAMES` | Comma-separated list of apps to collect (e.g., `login,admin,drive`) | `login,admin,token,drive` |
 | `PORT` | Port for the FastAPI server | `8080` |
