@@ -93,10 +93,10 @@ resource "google_service_account_iam_member" "collector_token_creator" {
 
 
 # IAM: Collector permissions to access/manage state in Parameter Manager
-resource "google_service_account_iam_member" "parameter_version_manager" {
-  service_account_id = google_service_account.collector_sa.name
-  role               = "roles/parametermanager.parameterVersionManager"
-  member             = "serviceAccount:${google_service_account.collector_sa.email}"
+resource "google_project_iam_member" "parameter_version_manager" {
+  project = var.project_id
+  role    = "roles/parametermanager.parameterVersionManager"
+  member  = "serviceAccount:${google_service_account.collector_sa.email}"
 }
 
 # IAM: Grant access to any secrets being mounted
