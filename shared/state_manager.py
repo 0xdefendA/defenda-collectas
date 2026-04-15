@@ -27,7 +27,7 @@ class StateManager:
         self.parameter_path = self.client.parameter_path(
             project_id, location_id, parameter_id
         )
-        logger.info(
+        logger.warning(
             f"Initialized StateManager with parameter path: {self.parameter_path}"
         )
 
