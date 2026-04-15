@@ -104,6 +104,10 @@ async def trigger_collection():
         last_query_time = datetime.now(timezone.utc) - timedelta(hours=1)
         last_query_time_str = last_query_time.isoformat()
 
+    # gmail requires an end time, so we set it to now + 1 hour to ensure we capture all recent logs up to the current time.
+    end_time = datetime.now(timezone.utc) + timedelta(hours=1)
+    end_time_str = end_time.isoformat()
+
     logger.info(f"Fetching logs since: {last_query_time_str}")
 
     total_records = 0
@@ -120,6 +124,7 @@ async def trigger_collection():
                         userKey="all",
                         applicationName=app_name.strip(),
                         startTime=last_query_time_str,
+                        endTime=end_time_str,
                         pageToken=page_token,
                         maxResults=1000,
                     )

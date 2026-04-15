@@ -27,9 +27,6 @@ class StateManager:
         self.parameter_path = self.client.parameter_path(
             self.project_id, self.location_id, self.parameter_id
         )
-        logger.warning(
-            f"Initialized StateManager with parameter path: {self.parameter_path}"
-        )
 
     def get_state(self) -> Optional[str]:
         """Retrieves the latest state from the Parameter Manager.
@@ -38,34 +35,17 @@ class StateManager:
             The latest state value, or None if not found or on error.
         """
         try:
-            # # List versions and find the one with the most recent create_time
-            # request = parametermanager_v1.ListParameterVersionsRequest(
-            #     parent=self.parameter_path,
-            #     page_size=1,
-            #     order_by="create_time desc",
-            # )
-            # results = self.client.list_parameter_versions(request=request)
-            # versions = list(results)
-            # if not versions:
-            #     return None
-
-            # latest_version = versions[0]
-
-            # Get the full version details including payload
-
-            # Build the FULL resource name of the parameter version.
-            # in the format projects/*/locations/*/parameters/*/versions/*.
 
             full_version_name = self.client.parameter_version_path(
                 self.project_id, self.location_id, self.parameter_id, "current"
             )
-            logger.info(
+            logger.debug(
                 f"Constructed full version name for retrieval: {full_version_name}"
             )
             get_request = parametermanager_v1.GetParameterVersionRequest(
                 name=full_version_name
             )
-            logger.info(
+            logger.debug(
                 f"Retrieving state from Parameter Manager version: {get_request}"
             )
             response = self.client.get_parameter_version(request=get_request)
@@ -115,7 +95,7 @@ class StateManager:
                     )
                 ),
             )
-            logger.info(
+            logger.debug(
                 f"Creating new parameter version with state: {state_value} and request: {request}"
             )
             self.client.create_parameter_version(request=request)
