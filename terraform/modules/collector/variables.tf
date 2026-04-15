@@ -34,3 +34,9 @@ variable "secret_mounts" {
   type        = map(string)
   default     = {}
 }
+
+variable "image_tag" {
+  description = "The docker image tag to use for this collector"
+  type        = string
+  default     = "latest"
+}

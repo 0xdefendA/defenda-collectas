@@ -48,7 +48,8 @@ jobs:
       - name: Build and push Google Workspace Docker image
         run: |
           IMAGE_PATH="${{ env.REGISTRY_HOST }}/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/google-workspace-collector"
-          docker build -t $IMAGE_PATH:latest -f collectors/google_workspace/Dockerfile .
+          docker build -t $IMAGE_PATH:${{ github.sha }} -t $IMAGE_PATH:latest -f collectors/google_workspace/Dockerfile .
+          docker push $IMAGE_PATH:${{ github.sha }}
           docker push $IMAGE_PATH:latest
 
       - name: Setup Terraform
@@ -67,6 +68,7 @@ jobs:
         working-directory: terraform
         run: terraform apply -auto-approve
         env:
+          TF_VAR_image_tag: ${{ github.sha }}
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_pubsub_topic_name: "defenda-event-ingest"
           TF_VAR_collectors: >

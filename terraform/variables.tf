@@ -17,10 +17,16 @@ variable "pubsub_topic_name" {
 variable "collectors" {
   description = "A map of collector configurations to deploy"
   type = map(object({
-    enabled          = bool
-    schedule         = string
-    env_vars         = map(string)
-    secret_mounts    = map(string) # Map ENV_VAR to Secret ID
+    enabled       = bool
+    schedule      = string
+    env_vars      = map(string)
+    secret_mounts = map(string) # Map ENV_VAR to Secret ID
   }))
   default = {}
+}
+
+variable "image_tag" {
+  description = "The Docker image tag to deploy (e.g., git commit SHA or 'latest')"
+  type        = string
+  default     = "latest"
 }

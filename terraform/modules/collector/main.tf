@@ -30,7 +30,7 @@ resource "google_cloud_run_v2_service" "service" {
     service_account = google_service_account.collector_sa.email
     containers {
       # AUTOMATIC IMAGE INFERENCE: Constructed from project, region, and collector name
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/collectors/${var.name}-collector:latest"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/collectors/${var.name}-collector:${var.image_tag}"
 
       ports {
         container_port = 8080
