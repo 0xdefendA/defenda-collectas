@@ -25,7 +25,7 @@ class StateManager:
             client_options={"api_endpoint": api_endpoint}
         )
         self.parameter_path = self.client.parameter_path(
-            project_id, location_id, parameter_id
+            self.project_id, self.location_id, self.parameter_id
         )
         logger.warning(
             f"Initialized StateManager with parameter path: {self.parameter_path}"
