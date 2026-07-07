@@ -114,6 +114,14 @@ enough):
  gcloud organizations add-iam-policy-binding "${ORG_ID}" \
    --role="roles/logging.configWriter" \
    --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+
+ # Pre-provision the org-level Cloud Logging service agent. Org sinks write
+ # as the shared agent service-org-${ORG_ID}@gcp-sa-logging.iam.gserviceaccount.com,
+ # which GCP creates lazily — without this step the first terraform apply
+ # fails granting pubsub.publisher with "service account does not exist".
+ gcloud beta services identity create \
+   --service=logging.googleapis.com \
+   --organization="${ORG_ID}"
 ```
 
 Note this is an org-level grant to a CI-impersonable identity: it allows
