@@ -71,6 +71,8 @@ jobs:
           TF_VAR_image_tag: ${{ github.sha }}
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_pubsub_topic_name: "defenda-event-ingest"
+          # Empty/unset org id falls back to a project-level audit log sink
+          TF_VAR_organization_id: ${{ secrets.GCP_ORG_ID }}
           TF_VAR_collectors: >
             {
               "google-workspace" = {
