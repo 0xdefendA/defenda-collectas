@@ -30,3 +30,15 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "enable_gcp_audit_sink" {
+  description = "Route GCP Admin Activity audit logs into the ingest topic via a Cloud Logging sink"
+  type        = bool
+  default     = true
+}
+
+variable "organization_id" {
+  description = "GCP organization ID for an org-level aggregated audit log sink; leave empty to fall back to a project-level sink"
+  type        = string
+  default     = ""
+}

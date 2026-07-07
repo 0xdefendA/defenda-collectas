@@ -96,12 +96,39 @@ gcloud artifacts repositories create "collectors" \
 
 ```
 
+## GCP audit log sink (optional, recommended)
+
+The Terraform in this repo can create a Cloud Logging sink that routes GCP
+Admin Activity audit logs into the `defenda-event-ingest` topic. With an
+organization ID set, the sink is org-level and aggregated (`include_children`),
+covering every current and future project; with no org it falls back to a
+sink on the platform project only.
+
+Creating an org-level sink requires the deployer service account to hold
+`roles/logging.configWriter` on the organization (project-level roles are not
+enough):
+
+```shell
+ export ORG_ID="your-org-id" # gcloud organizations list
+
+ gcloud organizations add-iam-policy-binding "${ORG_ID}" \
+   --role="roles/logging.configWriter" \
+   --member="serviceAccount:github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+```
+
+Note this is an org-level grant to a CI-impersonable identity: it allows
+managing log sinks org-wide (it does not allow reading or deleting log
+entries). Sink create/update/delete operations are themselves Admin Activity
+events, so once the sink is flowing, tampering with it is visible in the
+platform's own event stream.
+
   ### Final GitHub Configuration
-  In your GitHub repo settings, add these three secrets:
+  In your GitHub repo settings, add these secrets:
    1. GCP_PROJECT_ID: Your Project ID.
    2. GCP_WIF_PROVIDER: The output of command #7 (e.g., projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider).
    3. GCP_WIF_SERVICE_ACCOUNT: github-deployer@your-project-id.iam.gserviceaccount.com.
    4. TF_STATE_BUCKET: the bucket name created from your defenda platform deployment
+   5. GCP_ORG_ID (optional): your organization ID, enables the org-level audit log sink; leave unset for a project-level sink
 
   This setup is far more secure because it never uses a static JSON key. GitHub authenticates directly to GCP using an OIDC token that is only valid for that specific workflow run in your specific repository.
 
