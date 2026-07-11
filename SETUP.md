@@ -130,6 +130,72 @@ entries). Sink create/update/delete operations are themselves Admin Activity
 events, so once the sink is flowing, tampering with it is visible in the
 platform's own event stream.
 
+## Data Access audit logs (optional, recommended)
+
+**One-off, run by a human. Not terraform, not CI.**
+
+Without this, service-account impersonation (`GenerateAccessToken`) and secret
+retrieval (`AccessSecretVersion`) generate **no logs at all** — Data Access audit
+logs are off by default in GCP. Every credential-access hunt then returns empty,
+which looks exactly like a quiet environment. This is a *collection* gap wearing a
+detection gap's costume.
+
+```shell
+ export ORG_ID="your-org-id"
+
+ # dry run -- shows what would change, writes nothing
+ python scripts/enable_data_access_logs.py --org-id "${ORG_ID}"
+
+ # commit it
+ python scripts/enable_data_access_logs.py --org-id "${ORG_ID}" --apply
+```
+
+Terraform then routes them (`route_data_access_logs`, on by default). Routing logs
+that aren't being generated is harmless — the sink filter simply matches nothing
+until you run the script.
+
+### Why this one isn't in terraform
+
+Unlike the sink grant above — which narrowly says *"can manage log sinks"* —
+audit configs live **inside the org's IAM policy**. Changing them requires
+`resourcemanager.organizations.setIamPolicy`, which is org-admin. There is no
+narrow role. Granting that to the `terraform apply -auto-approve` deployer would
+mean anyone who can land a commit, compromise a third-party Action, or poison a
+workflow dependency can own the organization.
+
+It's also the wrong capability to automate on principle: **control over audit
+logging is the ability to switch off the telemetry defendA runs on.** Disabling
+audit logs is a catalogued attack technique
+(`stratus gcp.defense-evasion.disable-audit-logs`). A security platform should not
+hand that to a push-triggered pipeline. And `google_*_iam_audit_config` is
+*authoritative* — a state loss or a stray `terraform destroy` could remove audit
+logging org-wide.
+
+So Data Access logging is a **prerequisite the operator enables once**, like
+enabling the Workspace Admin API for that collector. This also keeps defendA
+deployable into orgs where you don't have — and shouldn't ask for — org-admin.
+
+The script does a read-modify-write on the org IAM policy (there is no `gcloud`
+command for audit configs), so it is careful about it: additive merge only, never
+removes an existing service/logType/exemption, passes the `etag` back for
+optimistic concurrency, and hard-aborts if role bindings differ by so much as a
+byte between read and write.
+
+### Drift is caught by detection, not by state
+
+Since terraform isn't enforcing this, something has to notice if it gets turned
+off:
+
+```shell
+ # exits non-zero if Data Access logging has drifted -- safe for cron
+ python scripts/enable_data_access_logs.py --org-id "${ORG_ID}" --check
+```
+
+More to the point, the platform watches itself: `defenda_hunting.feed_coverage`
+shows whether `data_access` events are actually arriving, and hunt skills declare
+`requires: [gcp_data_access]` so the orchestrator **skips** a hunt whose feed is
+dead rather than letting it report a false all-clear.
+
   ### Final GitHub Configuration
   In your GitHub repo settings, add these secrets:
    1. GCP_PROJECT_ID: Your Project ID.

@@ -43,44 +43,25 @@ variable "organization_id" {
   default     = ""
 }
 
-variable "enable_data_access_logs" {
+variable "route_data_access_logs" {
   description = <<-DESC
-    Enable Data Access audit logs org-wide and route them to the ingest topic.
+    Include Data Access audit logs in the sink filter.
 
-    Off by default in GCP. Without these, service-account impersonation
-    (GenerateAccessToken) and secret retrieval (AccessSecretVersion) are invisible
-    — every credential-access hunt returns empty no matter how good the agent is.
+    This only ROUTES them. GENERATING them requires editing the org IAM policy
+    (auditConfigs live inside it), which needs Organization Administrator — not
+    something the CI deployer should ever hold. That is a one-off human step:
 
-    Enabled ORG-WIDE deliberately, not just in the huntA detonation project. A
-    detonation project richer than production would teach hunt agents to write
-    skills against telemetry that does not exist anywhere else: perfect eval
-    scores, zero production detections, and a coverage map that lies.
+        python scripts/enable_data_access_logs.py --org-id <ORG> --apply
 
-    Data Access logs are chargeable (unlike Admin Activity). Scoped to the
-    services below rather than allServices.
+    See SETUP.md. Leaving this true while Data Access logging is not yet enabled is
+    harmless: the filter matches nothing until it is.
+
+    Why it matters: without Data Access logs, service-account impersonation
+    (GenerateAccessToken) and secret retrieval (AccessSecretVersion) are invisible,
+    and every credential-access hunt returns empty no matter how good the agent is.
+    Empty looks exactly like a quiet environment -- check
+    defenda_hunting.feed_coverage before believing it.
   DESC
   type        = bool
   default     = true
-}
-
-variable "data_access_services" {
-  description = <<-DESC
-    Services to enable Data Access audit logs on. Both ADMIN_READ and DATA_READ are
-    set for each — see the log_type notes in gcp_audit_sink.tf before trimming
-    either, because the intuitive choice is wrong:
-
-      * iam.googleapis.com has NO DATA_READ methods; ADMIN_READ is what matters.
-      * GenerateAccessToken (SA impersonation) is ADMIN_READ, not DATA_READ.
-      * iamcredentials.googleapis.com cannot be configured independently — it rides
-        on iam.googleapis.com, so listing it here would silently no-op.
-
-    bigquery.googleapis.com is deliberately absent: its Data Access logs are always
-    on and cannot be disabled.
-  DESC
-  type        = list(string)
-  default = [
-    "iam.googleapis.com",           # + iamcredentials: impersonation, key/policy recon
-    "secretmanager.googleapis.com", # AccessSecretVersion + secret enumeration
-    "storage.googleapis.com",       # GCS object reads (highest volume of the three)
-  ]
 }

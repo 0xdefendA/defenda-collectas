@@ -29,7 +29,11 @@ locals {
   gcp_audit_org_scoped   = local.gcp_audit_sink_enabled && var.organization_id != ""
   gcp_audit_proj_scoped  = local.gcp_audit_sink_enabled && var.organization_id == ""
 
-  gcp_audit_data_access_enabled = local.gcp_audit_sink_enabled && var.enable_data_access_logs
+  # Whether to ROUTE Data Access logs. Enabling their GENERATION is a separate,
+  # human-run step (scripts/enable_data_access_logs.py) — see the note below.
+  # Routing logs that are not being generated is harmless: the filter simply
+  # matches nothing.
+  gcp_audit_data_access_enabled = local.gcp_audit_sink_enabled && var.route_data_access_logs
 
   # Admin Activity (always on, free) plus — when enabled — Data Access.
   # NOTE the log name suffixes are exact and easy to fumble:
@@ -46,60 +50,38 @@ locals {
   gcp_audit_destination = "pubsub.googleapis.com/${data.google_pubsub_topic.existing_ingest.id}"
 }
 
-# --- Data Access audit configuration -----------------------------------------
+# --- Data Access audit configuration is NOT managed here ----------------------
 #
-# READ THIS BEFORE CHANGING log_type VALUES. The obvious config is wrong:
+# Deliberate. See scripts/enable_data_access_logs.py and SETUP.md.
 #
-#   * iam.googleapis.com has NO DATA_READ methods at all. A DATA_READ block on it
-#     applies cleanly in terraform and does exactly nothing.
+# Enabling Data Access logs means editing the ORG's IAM policy (auditConfigs live
+# inside it), which requires resourcemanager.organizations.setIamPolicy — i.e.
+# Organization Administrator. Three reasons that does not belong in this terraform:
 #
-#   * GenerateAccessToken — service-account impersonation, the single highest-value
-#     cloud lateral-movement signal — is ADMIN_READ, not DATA_READ.
+#   1. The deployer SA runs `terraform apply -auto-approve` from a GitHub Actions
+#      runner. Granting it org setIamPolicy means anyone who can land a commit,
+#      compromise a third-party Action, or poison a workflow dep can own the org.
+#      Compare roles/logging.configWriter (below), which only says "can create
+#      sinks" — narrow and contained. There is no equivalently narrow role here.
 #
-#   * iamcredentials.googleapis.com CANNOT be configured independently. It rides on
-#     iam.googleapis.com. Naming it here would apply and silently no-op.
+#   2. Control over audit logging IS the ability to turn off the telemetry defendA
+#      runs on. That is literally an attack technique
+#      (stratus gcp.defense-evasion.disable-audit-logs). Handing it to a
+#      push-triggered pipeline is self-defeating for a security platform.
 #
-# So ADMIN_READ on iam.googleapis.com is the line that actually buys impersonation
-# visibility, and it is the one a reasonable person would have left out.
+#   3. google_*_iam_audit_config is AUTHORITATIVE per service. A state loss, bad
+#      refresh, or terraform destroy could REMOVE audit logging org-wide. IaC
+#      should not hold a live switch that blinds the SIEM.
 #
-# Org-level config is inherited by all current and future projects and cannot be
-# weakened by a child project (configs union; a project may add logging and add
-# exemptions, but never remove what the org set).
-resource "google_organization_iam_audit_config" "data_access" {
-  for_each = local.gcp_audit_data_access_enabled && local.gcp_audit_org_scoped ? toset(var.data_access_services) : toset([])
-
-  org_id  = var.organization_id
-  service = each.key
-
-  # ADMIN_READ: metadata/config reads. This is where GenerateAccessToken,
-  # TestIamPermissions, GetIamPolicy, ListServiceAccountKeys, and Secret Manager
-  # enumeration live — i.e. most of the recon and impersonation signal.
-  audit_log_config {
-    log_type = "ADMIN_READ"
-  }
-
-  # DATA_READ: actual data reads. AccessSecretVersion (the real secret retrieval)
-  # and GCS object reads.
-  audit_log_config {
-    log_type = "DATA_READ"
-  }
-}
-
-# Project-scoped fallback for orgless deployments. Same log_type reasoning.
-resource "google_project_iam_audit_config" "data_access" {
-  for_each = local.gcp_audit_data_access_enabled && local.gcp_audit_proj_scoped ? toset(var.data_access_services) : toset([])
-
-  project = var.project_id
-  service = each.key
-
-  audit_log_config {
-    log_type = "ADMIN_READ"
-  }
-
-  audit_log_config {
-    log_type = "DATA_READ"
-  }
-}
+# Instead: Data Access logging is a PREREQUISITE the operator enables once, like
+# enabling the Workspace Admin API for that collector. This matters for the
+# portfolio deployment model too — you will not (and should not) get org-admin in
+# a client's org.
+#
+# Drift is handled by DETECTION rather than by state, which is more in the spirit
+# of the platform: the defenda_hunting.feed_coverage view shows whether
+# data_access events are actually arriving, and a tripwire rule alerts on anyone
+# modifying auditConfigs or this sink. defendA watches its own control plane.
 
 # --- Sinks --------------------------------------------------------------------
 
